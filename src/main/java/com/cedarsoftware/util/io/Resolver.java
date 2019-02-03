@@ -232,7 +232,7 @@ abstract class Resolver
     {
         // Convert @keys to a Collection of Java objects.
         convertMapToKeysItems(jsonObj);
-        final Object[] keys = (Object[]) jsonObj.get("@keys");
+        final Object[] keys = (Object[]) jsonObj.get("$keys");
         final Object[] items = jsonObj.getArray();
 
         if (keys == null || items == null)
@@ -261,7 +261,7 @@ abstract class Resolver
     private static Object[] buildCollection(Deque<JsonObject<String, Object>> stack, Object[] items, int size)
     {
         final JsonObject<String, Object> jsonCollection = new JsonObject<String, Object>();
-        jsonCollection.put("@items", items);
+        jsonCollection.put("$values", items);
         final Object[] javaKeys = new Object[size];
         jsonCollection.target = javaKeys;
         stack.addFirst(jsonCollection);
@@ -276,7 +276,7 @@ abstract class Resolver
      */
     protected static void convertMapToKeysItems(final JsonObject<String, Object> map)
     {
-        if (!map.containsKey("@keys") && !map.isReference())
+        if (!map.containsKey("$keys") && !map.isReference())
         {
             final Object[] keys = new Object[map.size()];
             final Object[] values = new Object[map.size()];
@@ -292,8 +292,8 @@ abstract class Resolver
             String saveType = map.getType();
             map.clear();
             map.setType(saveType);
-            map.put("@keys", keys);
-            map.put("@items", values);
+            map.put("$keys", keys);
+            map.put("$values", values);
         }
     }
 
@@ -402,7 +402,7 @@ abstract class Resolver
 
             // if @items is specified, it must be an [] type.
             // if clazz.isArray(), then it must be an [] type.
-            if (clazz.isArray() || (items != null && clazz == Object.class && !jsonObj.containsKey("@keys")))
+            if (clazz.isArray() || (items != null && clazz == Object.class && !jsonObj.containsKey("$keys")))
             {
                 int size = (items == null) ? 0 : items.length;
                 mate = Array.newInstance(clazz.isArray() ? clazz.getComponentType() : Object.class, size);
@@ -547,7 +547,7 @@ abstract class Resolver
     }
 
     /**
-     * For all fields where the value was "@ref":"n" where 'n' was the id of an object
+     * For all fields where the value was "$ref":"n" where 'n' was the id of an object
      * that had not yet been encountered in the stream, make the final substitution.
      */
     protected void patchUnresolvedReferences()
@@ -620,8 +620,8 @@ abstract class Resolver
             if (useMapsLocal)
             {   // Make the @keys be the actual keys of the map.
                 map = jObj;
-                javaKeys = (Object[]) jObj.remove("@keys");
-                javaValues = (Object[]) jObj.remove("@items");
+                javaKeys = (Object[]) jObj.remove("$keys");
+                javaValues = (Object[]) jObj.remove("$values");
             }
             else
             {

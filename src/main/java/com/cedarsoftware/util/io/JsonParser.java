@@ -78,11 +78,11 @@ class JsonParser
         stringCache.put("off", "off");
         stringCache.put("Off", "Off");
         stringCache.put("OFF", "OFF");
-        stringCache.put("@id", "@id");
-        stringCache.put("@ref", "@ref");
-        stringCache.put("@items", "@items");
-        stringCache.put("@type", "@type");
-        stringCache.put("@keys", "@keys");
+        stringCache.put("$id", "$id");
+        stringCache.put("$ref", "$ref");
+        stringCache.put("$values", "$values");
+        stringCache.put("$type", "$type");
+        stringCache.put("$keys", "$keys");
         stringCache.put("0", "0");
         stringCache.put("1", "1");
         stringCache.put("2", "2");
@@ -147,27 +147,27 @@ class JsonParser
                             error("Expected ':' between string field and value");
                         }
 
-                        if (field.startsWith("@"))
+                        if (field.startsWith("$"))
                         {   // Expand short-hand meta keys
-                            if (field.equals("@t"))
+                            if (field.equals("$t"))
                             {
-                                field = stringCache.get("@type");
+                                field = stringCache.get("$type");
                             }
-                            else if (field.equals("@i"))
+                            else if (field.equals("$i"))
                             {
-                                field = stringCache.get("@id");
+                                field = stringCache.get("$id");
                             }
-                            else if (field.equals("@r"))
+                            else if (field.equals("$r"))
                             {
-                                field = stringCache.get("@ref");
+                                field = stringCache.get("$ref");
                             }
-                            else if (field.equals("@k"))
+                            else if (field.equals("$k"))
                             {
-                                field = stringCache.get("@keys");
+                                field = stringCache.get("$keys");
                             }
-                            else if (field.equals("@e"))
+                            else if (field.equals("$e"))
                             {
-                                field = stringCache.get("@items");
+                                field = stringCache.get("$values");
                             }
                         }
                         state = STATE_READ_VALUE;
@@ -182,11 +182,11 @@ class JsonParser
                     if (field == null)
                     {	// field is null when you have an untyped Object[], so we place
                         // the JsonArray on the @items field.
-                        field = "@items";
+                        field = "$values";
                     }
 
                     Object value = readValue(object);
-                    if ("@type".equals(field) && typeNameMap != null)
+                    if ("$type".equals(field) && typeNameMap != null)
                     {
                         final String substitute = typeNameMap.get(value);
                         if (substitute != null)
@@ -197,9 +197,14 @@ class JsonParser
                     object.put(field, value);
 
                     // If object is referenced (has @id), then put it in the _objsRead table.
-                    if ("@id".equals(field))
+                    if ("$id".equals(field))
                     {
-                        objsRead.put((Long) value, object);
+                    	Long v=(long) -1;
+                    	if (value.getClass().equals(String.class)) 
+            				v=Long.parseLong((String)value);
+                        else
+                        	v = (Long) value;
+                        objsRead.put(v, object);
                     }
                     state = STATE_READ_POST_VALUE;
                     break;

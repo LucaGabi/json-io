@@ -88,7 +88,7 @@ public class MapResolver extends Resolver
             {   // RHS is an array
                 // Trace the contents of the array (so references inside the array and into the array work)
                 JsonObject<String, Object> jsonArray = new JsonObject<String, Object>();
-                jsonArray.put("@items", rhs);
+                jsonArray.put("$values", rhs);
                 stack.addFirst(jsonArray);
 
                 // Assign the array directly to the Map key (field name)
@@ -176,7 +176,7 @@ public class MapResolver extends Resolver
             if (element instanceof Object[])
             {   // array element inside Collection
                 JsonObject<String, Object> jsonObject = new JsonObject<String, Object>();
-                jsonObject.put("@items", element);
+                jsonObject.put("$values", element);
                 stack.addFirst(jsonObject);
             }
             else if (element instanceof JsonObject)

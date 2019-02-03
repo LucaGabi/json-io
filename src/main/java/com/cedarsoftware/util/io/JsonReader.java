@@ -372,9 +372,9 @@ public class JsonReader implements Closeable
      * @param json String JSON input
      * @return Java object graph matching JSON input
      */
-    public static Object jsonToJava(String json)
+    public static Object jsonToJava(String json,Class clazz)
     {
-        return jsonToJava(json, null);
+        return jsonToJava(json,clazz, null);
     }
 
     /**
@@ -384,7 +384,7 @@ public class JsonReader implements Closeable
      * @param optionalArgs Map of optional parameters to control parsing.  See readme file for details.
      * @return Java object graph matching JSON input
      */
-    public static Object jsonToJava(String json, Map<String, Object> optionalArgs)
+    public static Object jsonToJava(String json,Class clazz, Map<String, Object> optionalArgs)
     {
         if (optionalArgs == null)
         {
@@ -396,7 +396,7 @@ public class JsonReader implements Closeable
             optionalArgs.put(USE_MAPS, false);
         }
         JsonReader jr = new JsonReader(json, optionalArgs);
-        Object obj = jr.readObject();
+        Object obj = jr.readObject(clazz);
         jr.close();
         return obj;
     }
@@ -408,7 +408,7 @@ public class JsonReader implements Closeable
      * @param optionalArgs Map of optional parameters to control parsing.  See readme file for details.
      * @return Java object graph matching JSON input
      */
-    public static Object jsonToJava(InputStream inputStream, Map<String, Object> optionalArgs)
+    public static Object jsonToJava(InputStream inputStream,Class clazz, Map<String, Object> optionalArgs)
     {
         if (optionalArgs == null)
         {
@@ -420,7 +420,7 @@ public class JsonReader implements Closeable
             optionalArgs.put(USE_MAPS, false);
         }
         JsonReader jr = new JsonReader(inputStream, optionalArgs);
-        Object obj = jr.readObject();
+        Object obj = jr.readObject(clazz);
         jr.close();
         return obj;
     }
@@ -459,7 +459,7 @@ public class JsonReader implements Closeable
             optionalArgs.put(USE_MAPS, true);
             ByteArrayInputStream ba = new ByteArrayInputStream(json.getBytes("UTF-8"));
             JsonReader jr = new JsonReader(ba, optionalArgs);
-            Object ret = jr.readObject();
+            Object ret = jr.readObject(Object.class);
             jr.close();
 
             return adjustOutputMap(ret);
@@ -488,7 +488,7 @@ public class JsonReader implements Closeable
         }
         optionalArgs.put(USE_MAPS, true);
         JsonReader jr = new JsonReader(inputStream, optionalArgs);
-        Object ret = jr.readObject();
+        Object ret = jr.readObject(Object.class);
         jr.close();
 
         return adjustOutputMap(ret);
@@ -504,11 +504,11 @@ public class JsonReader implements Closeable
         if (ret != null && ret.getClass().isArray())
         {
             JsonObject<String, Object> retMap = new JsonObject<String, Object>();
-            retMap.put("@items", ret);
+            retMap.put("$values", ret);
             return retMap;
         }
         JsonObject<String, Object> retMap = new JsonObject<String, Object>();
-        retMap.put("@items", new Object[]{ret});
+        retMap.put("$values", new Object[]{ret});
         return retMap;
     }
 
@@ -664,7 +664,7 @@ public class JsonReader implements Closeable
      * @return Java Object graph constructed from InputStream supplying
      *         JSON serialized content.
      */
-    public Object readObject()
+    public Object readObject(Class clazz)
     {
         JsonParser parser = new JsonParser(input, objsRead, getArgs());
         JsonObject<String, Object> root = new JsonObject();
@@ -691,12 +691,12 @@ public class JsonReader implements Closeable
         {
             root.setType(Object[].class.getName());
             root.setTarget(o);
-            root.put("@items", o);
-            graph = convertParsedMapsToJava(root);
+            root.put("$values", o);
+            graph = convertParsedMapsToJava(root,clazz);
         }
         else
         {
-            graph = o instanceof JsonObject ? convertParsedMapsToJava((JsonObject) o) : o;
+            graph = o instanceof JsonObject ? convertParsedMapsToJava((JsonObject) o,clazz) : o;
         }
 
         // Allow a complete 'Map' return (Javascript style)
@@ -714,10 +714,10 @@ public class JsonReader implements Closeable
      * JSON input that was parsed in an earlier call to JsonReader.
      * @return a typed Java instance that was serialized into JSON.
      */
-    public Object jsonObjectsToJava(JsonObject root)
+    public Object jsonObjectsToJava(JsonObject root,Class clazz)
     {
         getArgs().put(USE_MAPS, false);
-        return convertParsedMapsToJava(root);
+        return convertParsedMapsToJava(root,clazz);
     }
 
     protected boolean useMaps()
@@ -743,12 +743,12 @@ public class JsonReader implements Closeable
      * JSON input that was parsed in an earlier call to JsonReader.
      * @return a typed Java instance that was serialized into JSON.
      */
-    protected Object convertParsedMapsToJava(JsonObject root)
+    protected Object convertParsedMapsToJava(JsonObject root, Class clazz)
     {
         try
         {
             Resolver resolver = useMaps() ? new MapResolver(this) : new ObjectResolver(this, (ClassLoader)args.get(CLASSLOADER));
-            resolver.createJavaObjectInstance(Object.class, root);
+            resolver.createJavaObjectInstance(clazz, root);
             Object graph = resolver.convertMapsToObjects((JsonObject<String, Object>) root);
             resolver.cleanup();
             readers.clear();
